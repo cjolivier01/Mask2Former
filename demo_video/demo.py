@@ -106,6 +106,11 @@ def test_opencv_video_format(codec, file_ext):
         return False
 
 
+def split_list(input_list, chunk_size=6):
+    # Split the list into chunks of size `chunk_size`
+    return [input_list[i:i + chunk_size] for i in range(0, len(input_list), chunk_size)]
+
+
 if __name__ == "__main__":
     mp.set_start_method("spawn", force=True)
     args = get_parser().parse_args()
@@ -167,9 +172,17 @@ if __name__ == "__main__":
             else:
                 break
 
+        predictions = []
+        visualized_output = []
+
         start_time = time.time()
-        with autocast():
-            predictions, visualized_output = demo.run_on_video(vid_frames)
+        lists = split_list(vid_frames, chunk_size=2)
+        for vf in lists:
+            #with autocast():
+            p, vo = demo.run_on_video(vf)
+            predictions += p
+            visualized_output += vo
+                
         logger.info(
             "detected {} instances per frame in {:.2f}s".format(
                 len(predictions["pred_scores"]), time.time() - start_time

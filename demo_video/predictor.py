@@ -50,14 +50,22 @@ class VisualizationDemo(object):
         vis_output = None
         predictions = self.predictor(frames)
 
-        image_size = predictions["image_size"]
-        pred_scores = predictions["pred_scores"]
-        pred_labels = predictions["pred_labels"]
-        pred_masks = predictions["pred_masks"]
+        pred_scores = []
+        pred_labels = []
+        pred_masks = []
+
+        image_size = predictions[0]["instances"].image_size
+        for pred in predictions:
+            instances = pred["instances"]
+            pred_scores.append(instances._fields["score"])
+            pred_labels.append(instances._fields["pred_classes"])
+            pred_masks.append(instances._fields["pred_masts"])
 
         frame_masks = list(zip(*pred_masks))
         total_vis_output = []
         for frame_idx in range(len(frames)):
+            if frame_idx % 20 == 0:
+                print(f"Processing frame {frame_idx}/{len(frames)}...")
             frame = frames[frame_idx][:, :, ::-1]
             visualizer = TrackVisualizer(frame, self.metadata, instance_mode=self.instance_mode)
             ins = Instances(image_size)
@@ -111,10 +119,13 @@ class VideoPredictor(DefaultPredictor):
                 height, width = original_image.shape[:2]
                 image = self.aug.get_transform(original_image).apply_image(original_image)
                 image = torch.as_tensor(image.astype("float32").transpose(2, 0, 1))
-                input_frames.append(image)
+                #input_frames.append(image)
+                input_frames.append({"image": image, "height": height, "width": width})
+            #input_frames = torch.cat(input_frames)
 
-            inputs = {"image": input_frames, "height": height, "width": width}
-            predictions = self.model([inputs])
+            #inputs = {"image": input_frames, "height": height, "width": width}
+            #predictions = self.model([inputs])
+            predictions = self.model(input_frames)
             return predictions
 
 
