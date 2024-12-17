@@ -5,11 +5,10 @@ Modules to compute the matching cost and solve the corresponding LSAP.
 """
 import torch
 import torch.nn.functional as F
+from detectron2.projects.point_rend.point_features import point_sample
 from scipy.optimize import linear_sum_assignment
 from torch import nn
 from torch.cuda.amp import autocast
-
-from detectron2.projects.point_rend.point_features import point_sample
 
 
 def batch_dice_loss(inputs: torch.Tensor, targets: torch.Tensor):
@@ -131,7 +130,7 @@ class HungarianMatcher(nn.Module):
                 align_corners=False,
             ).squeeze(1)
 
-            with autocast(enabled=False):
+            with torch.amp.autocast("cuda", enabled=False):
                 out_mask = out_mask.float()
                 tgt_mask = tgt_mask.float()
                 # Compute the focal loss between masks
@@ -139,7 +138,7 @@ class HungarianMatcher(nn.Module):
 
                 # Compute the dice loss betwen masks
                 cost_dice = batch_dice_loss_jit(out_mask, tgt_mask)
-            
+
             # Final cost matrix
             C = (
                 self.cost_mask * cost_mask
