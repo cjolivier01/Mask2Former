@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from torch.optim.lr_scheduler import LRScheduler
+
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 """
 MaskFormer Training Script.
@@ -6,8 +10,10 @@ This script is a simplified version of the training script in detectron2/tools.
 """
 try:
     # ignore ShapelyDeprecationWarning from fvcore
-    from shapely.errors import ShapelyDeprecationWarning
     import warnings
+
+    from shapely.errors import ShapelyDeprecationWarning
+
     warnings.filterwarnings('ignore', category=ShapelyDeprecationWarning)
 except:
     pass
@@ -16,13 +22,11 @@ import copy
 import itertools
 import logging
 import os
-
 from collections import OrderedDict
 from typing import Any, Dict, List, Set
 
-import torch
-
 import detectron2.utils.comm as comm
+import torch
 from detectron2.checkpoint import DetectionCheckpointer
 from detectron2.config import get_cfg
 from detectron2.data import MetadataCatalog, build_detection_train_loader

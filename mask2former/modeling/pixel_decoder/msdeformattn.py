@@ -1,21 +1,20 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 import logging
-import numpy as np
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import fvcore.nn.weight_init as weight_init
+import numpy as np
 import torch
-from torch import nn
-from torch.nn import functional as F
-from torch.nn.init import xavier_uniform_, constant_, uniform_, normal_
-from torch.cuda.amp import autocast
-
 from detectron2.config import configurable
 from detectron2.layers import Conv2d, ShapeSpec, get_norm
 from detectron2.modeling import SEM_SEG_HEADS_REGISTRY
+from torch import nn
+from torch.cuda.amp import autocast
+from torch.nn import functional as F
+from torch.nn.init import constant_, normal_, uniform_, xavier_uniform_
 
 from ..transformer_decoder.position_encoding import PositionEmbeddingSine
-from ..transformer_decoder.transformer import _get_clones, _get_activation_fn
+from ..transformer_decoder.transformer import _get_activation_fn, _get_clones
 from .ops.modules import MSDeformAttn
 
 
@@ -201,7 +200,7 @@ class MSDeformAttnPixelDecoder(nn.Module):
         self.in_features = [k for k, v in input_shape]  # starting from "res2" to "res5"
         self.feature_strides = [v.stride for k, v in input_shape]
         self.feature_channels = [v.channels for k, v in input_shape]
-        
+
         # this is the input shape of transformer encoder (could use less features than pixel decoder
         transformer_input_shape = sorted(transformer_input_shape.items(), key=lambda x: x[1].stride)
         self.transformer_in_features = [k for k, v in transformer_input_shape]  # starting from "res2" to "res5"
@@ -250,7 +249,7 @@ class MSDeformAttnPixelDecoder(nn.Module):
             padding=0,
         )
         weight_init.c2_xavier_fill(self.mask_features)
-        
+
         self.maskformer_num_feature_levels = 3  # always use 3 scales
         self.common_stride = common_stride
 
@@ -311,7 +310,7 @@ class MSDeformAttnPixelDecoder(nn.Module):
         ret["common_stride"] = cfg.MODEL.SEM_SEG_HEAD.COMMON_STRIDE
         return ret
 
-    @autocast(enabled=False)
+    @torch.amp.autocast("cuda", enabled=False)
     def forward_features(self, features):
         srcs = []
         pos = []
